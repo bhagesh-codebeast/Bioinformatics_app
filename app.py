@@ -198,7 +198,7 @@ elif select == "Protein Data Bank":
     elif Options == "Protein Symmetry":
         searchterm  = st.text_input("Protein Symmetry",'C9')
         if st.button("Submit"):
-            result = do_protsym_search(searchterm, min_rmsd=0.0, max_rmsd=1.0).search()
+            result = do_protsym_search(searchterm, min_rmsd=0.0, max_rmsd=1.0)
             st.write(result)
         elif not searchterm:
             st.warning("Please enter a Search term !")
