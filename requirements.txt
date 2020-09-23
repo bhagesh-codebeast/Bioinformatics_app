@@ -5,3 +5,4 @@ altair==4.1.0
 biopython==1.78.0
 stmol==0.0.5
 streamlit==0.67.0
+pypdb==1.310.0

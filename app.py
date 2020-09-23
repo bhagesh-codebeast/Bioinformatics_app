@@ -1,7 +1,10 @@
+from re import search
 from typing import Counter
+from Bio.SeqIO import index
 from Bio.SeqUtils.IsoelectricPoint import IsoelectricPoint
 from altair.vegalite.v4.api import Chart
 from altair.vegalite.v4.schema.channels import Detail
+from google.protobuf import message
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -11,6 +14,7 @@ from Bio.SeqUtils.ProtParam import ProteinAnalysis as PA
 from Bio.SeqUtils import MeltingTemp
 import matplotlib.pyplot as plt
 from stmol import component_3dmol
+from pypdb import *
 
 
 # APP TITLE
@@ -18,7 +22,7 @@ st.title('BIOINFORMATICS TOOLS')
 
 # sidebar contents = https://towardsdatascience.com/creating-streamlit-dashboard-from-scratch-59316a74fa1
 st.sidebar.subheader("PICK TOOLS")
-select = st.sidebar.selectbox("DROP-DOWN",["ABOUT","DNA FASTA Sequence","Protein FASTA Sequence","Protein PDB File","Protein Data Bank"],key='1')
+select = st.sidebar.selectbox("DROP-DOWN",["ABOUT","DNA FASTA Sequence","Protein FASTA Sequence","Protein Data Bank","Protein Visualisation"],key='1')
 
 # OPTION 1 ABOUT
 if select == "ABOUT":
@@ -33,7 +37,13 @@ elif select == "DNA FASTA Sequence":
     st.header('DNA SEQUENCE')
 
     #INPUT USING TEXT BOX
-    # seqfileinput = st.text_input('Paste your sequence here',seqfile) = https://blog.jcharistech.com/2019/10/20/streamlit-python-tutorial-crash-course/
+    # seqfileinput = st.text_area('Paste your sequence here',"FASTA Sequence") #= https://blog.jcharistech.com/2019/10/20/streamlit-python-tutorial-crash-course/
+    # if st.button("Submit"):
+    #     seqfile = seqfileinput
+    # elif not seqfileinput:
+    #     st.warning("Please enter a FASTA Sequence !")
+    #     st.stop()
+
     #INPUT USING UPLOAD
     st.set_option('deprecation.showfileUploaderEncoding', False)
     seqfile = st.file_uploader("Upload DNA fasta file",type=["fasta","fa"])
@@ -138,14 +148,82 @@ elif select == "Protein FASTA Sequence":
             st.pyplot()
 
 #OPTION 4 READING PROTEIN PDB FILE
-elif select == "Protein PDB File":
+elif select == "Protein Data Bank":
     st.write()
-    st.write("https://github.com/williamgilpin/pypdb/blob/master/demos/demos.ipynb")
-    st.write("https://github.com/williamgilpin/pypdb/blob/master/demos/advanced_demos.ipynb")
-    st.write("http://www.wgilpin.com/pypdb_docs/html/")
+    # st.write("https://github.com/williamgilpin/pypdb/blob/master/demos/demos.ipynb")
+    # st.write("https://github.com/williamgilpin/pypdb/blob/master/demos/advanced_demos.ipynb")
+    # st.write("http://www.wgilpin.com/pypdb_docs/html/")
+
+    #Query PDB Database using pypdb
+    st.subheader("Query Protein Data Bank")
+    Options = st.radio("Search By",("pdbid","motif","Author","Litrature","Search By Term","Protein Symmetry","Experimental Method"))
+    if Options == "Search By Term":
+        searchterm = st.text_input("Enter Search term",'actin network')
+        if st.button("Submit"):
+            result = Query(searchterm).search()
+            st.write(result)
+        elif not searchterm:
+            st.warning("Please enter a Search term !")
+            st.stop()
+    elif Options == "pdbid":
+        searchterm = st.text_input("Enter PDB ID",'6YYT')
+        if st.button("Submit"):
+            st.subheader("Protein Description")
+            # df = pd.DataFrame.from_dict([describe_pdb(searchterm)])
+            # st.write(df.T)
+            st.write(describe_pdb(searchterm))
+            st.subheader("Protein Information")
+            st.write(get_all_info(searchterm))
+            # result = get_pdb_file(searchterm, filetype='cif', compression=False)
+            # st.write(result)
+        elif not searchterm:
+            st.warning("Please enter a Search term !")
+            st.stop()
+    elif Options == "motif":
+        searchterm  = st.text_input("Enter Motif",'TAGGY')
+        if st.button("Submit"):
+            result = Query(searchterm).search()
+            st.write(result)
+        elif not searchterm:
+            st.warning("Please enter a Search term !")
+            st.stop()
+    elif Options == "Experimental Method":
+        searchterm  = st.text_input("Enter experimental method",'SOLID-STATE NMR')
+        if st.button("Submit"):
+            result = Query(searchterm).search()
+            st.write(result)
+        elif not searchterm:
+            st.warning("Please enter a Search term !")
+            st.stop()
+    elif Options == "Protein Symmetry":
+        searchterm  = st.text_input("Protein Symmetry",'C9')
+        if st.button("Submit"):
+            result = do_protsym_search(searchterm, min_rmsd=0.0, max_rmsd=1.0).search()
+            st.write(result)
+        elif not searchterm:
+            st.warning("Please enter a Search term !")
+            st.stop()
+    elif Options == "Author":
+        searchterm  = st.text_input("Author  details",'Perutz, M.F.')
+        if st.button("Submit"):
+            result = Query(searchterm, query_type='AdvancedAuthorQuery').search()
+            st.write(result)
+        elif not searchterm:
+            st.warning("Please enter a Search term !")
+            st.stop()
+    elif Options == "Litrature":
+        searchterm  = st.text_input("Litrature details",'crispr')
+        if st.button("Submit"):
+            result = find_papers(searchterm)
+            st.write(result)
+        elif not searchterm:
+            st.warning("Please enter a Search term !")
+            st.stop()
+
+
 
 #OPTION 5 STREAMLIT PDB PLUGIN
-elif select == "Protein Data Bank":
+elif select == "Protein Visualisation":
     component_3dmol()
 
 #Transcribe or Translate
