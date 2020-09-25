@@ -19,16 +19,26 @@ import base64
 
 # APP TITLE
 st.title('BIOINFORMATICS TOOLS')
-
+st.markdown('******')
 # sidebar contents = https://towardsdatascience.com/creating-streamlit-dashboard-from-scratch-59316a74fa1
 st.sidebar.subheader("PICK TOOLS")
 select = st.sidebar.selectbox("DROP-DOWN",["ABOUT","DNA FASTA Sequence","Protein FASTA Sequence","Protein Data Bank","Protein Visualisation","Table Scraper"],key='1')
 
 # OPTION 1 ABOUT
 if select == "ABOUT":
-    st.header("BIOINFORMATICS SEQUENCE ANALYSIS WEB TOOLS")
-    st.subheader("BIOINFORMATICS SEQUENCE ANALYSIS WEB TOOLS")
-    st.text("BIOINFORMATICS SEQUENCE ANALYSIS WEB TOOLS")
+    st.header("LIST OF TOOLS")
+    st.subheader("DNA FASTA Sequence")
+    st.text("Basic statisttics and visualisation of nucleotide FASTA file")
+    st.subheader("Protein FASTA Sequence")
+    st.text("Basic statisttics and visualisation of amino acid FASTA file")
+    st.subheader("Protein Data Bank")
+    st.text("Tool to query and filter Protein Data Bank")
+    st.subheader("Protein Visualisation")
+    st.text("Tool to visualise proteins using PDB-ID or PDB file")
+    st.subheader("Table Scraper")
+    st.text("Tool to scrape tables from websites")
+    st.markdown('<br><br>', unsafe_allow_html=True)
+    st.write(" 👈 Click the arrow on top-left to get started.")
 
     #OPTION 2 DNA SEQUENCE
 elif select == "DNA FASTA Sequence":
@@ -155,7 +165,7 @@ elif select == "Protein Data Bank":
     # st.write("http://www.wgilpin.com/pypdb_docs/html/")
 
     #Query PDB Database using pypdb
-    st.subheader("Query Protein Data Bank")
+    st.header("Query Protein Data Bank")
     Options = st.radio("Search By",("pdbid","motif","Author","Litrature","Search By Term","Protein Symmetry","Experimental Method"))
     if Options == "Search By Term":
         searchterm = st.text_input("Enter Search term",'actin network')
@@ -224,62 +234,77 @@ elif select == "Protein Data Bank":
 
 #OPTION 5 STREAMLIT PDB PLUGIN
 elif select == "Protein Visualisation":
+    st.header("Visualise Proteins")
     component_3dmol()
 
 #Table scraper
 
 elif select == "Table Scraper":
-    st.subheader("HTML TABLE SCRAPER")
-    url = st.text_input("Enter URL Here", value='https://stackexchange.com/leagues/1/alltime/stackoverflow', max_chars=None, key=None, type='default')
-    if st.button('Submit'):
-        try:
-            if url:
-                arr = ['https://','http://']
-                if any(c in url for c in arr):
-                    header = {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                    @st.cache(persist=True, show_spinner=False)
-                    def load_data():
-                        pages = requests.get(url, headers=header)
-                        return pd.read_html(pages.text)
-                    df = load_data()
-                    length = len(df)
+    st.header("HTML TABLE SCRAPER")
+    try:
+        url =  st.text_input("Paste URL Here", value='https://stackexchange.com/leagues/1/alltime/stackoverflow', max_chars=None, key=None, type='default')
+        if url:
+            arr = ['https://', 'http://']
+            if any(crap in url for crap in arr):
+                header = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+                "X-Requested-With": "XMLHttpRequest"
+                }
+
+                @st.cache(persist=True, show_spinner=False)
+                def load_data():
+                    html_data = requests.get(url, headers=header)
+                    return pd.read_html(html_data.text)
+
+                df = load_data()
+                length = len(df)
                     
-                    if length == 1:
-                        st.write("Number of tables: 1" )
-                    else: st.write("Number of tables: ",str(length))
-                    if st.button("Show Tables"):
-                        st.table(df)
-                    else: st.empty()
-                    
-                    def create_list(x1,x2):
-                        return [item for item in range(x1,x2+1)]
-                    
-                    x1,x2 = 1,length
-                    
-                    Value_selected = st.selectbox("Select tables to download",create_list(x1,x2))
-                    st.write("You've selected table #",Value_selected)
-                    df1 = df[Value_selected-1]
-                    if df1.empty:
-                        st.warning("Empty DataFrame")
-                    else:
-                        df1 = df1.replace(np.nan, 'empty cell', regex=True)
-                        st.dataframe(df1)
-                        try:
-                            csv = df1.to_csv(index=False)
-                            b64 = base64.b64encode(csv.encode()).decode()
-                            text_display = f'<center>👇 Click to Download</center>'
-                            st.markdown(text_display, unsafe_allow_html=True)
-                            href = f'<center><b><a href="data:file/csv;base64,{b64}" download="filtered_table.csv">Download Table</a></b></center>'
-                            st.markdown(href, unsafe_allow_html=True)
-                        except NameError:
-                            print('WAIT')
+                if length == 1:
+                    st.write("Number of tables: 1 " )
+                else: st.write("Number of tables: " + str(length))
+
+                st.subheader("CLICK TO SEE TABLE DETAILS")
+                if st.button("Table Details"):
+                    st.table(df)
+                else: st.empty()
+
+                def createList(r1, r2): 
+                    return [item for item in range(r1, r2+1)] 
+
+                st.subheader('SELECT TABLE TO EXPORT')
+
+                r1, r2 = 1, length
+                funct = createList(r1, r2)
+                ValueSelected = st.selectbox('', funct)
+                st.write('You selected table #', ValueSelected)
+                df1 = df[ValueSelected -1]
+
+
+                if df1.empty:
+                        st.warning ('This DataFrame is empty!')
                 else:
-                    st.error("URL needs to be in a valid format, starting with *https://* or *http://*")
-        except ValueError:
-                st.warning("No tables detected")
+                    df1 = df1.replace(np.nan, 'empty cell', regex=True)
+                    st.dataframe(df1)
+
+                    try:
+                        csv = df1.to_csv(index=False)
+                        b64 = base64.b64encode(csv.encode()).decode()
+                        text_display = f'<br><center>Download 👇 Table</center>'
+                        st.markdown(text_display, unsafe_allow_html=True)
+                        href = f'<center><b><a href="data:file/csv;base64,{b64}" download="filtered_table.csv">Table #{ValueSelected}</a></b></center>'
+                        st.markdown(href, unsafe_allow_html=True)
+                    except NameError:
+                        print('WAIT')
+            else:
+                st.error ('URL needs to be in a valid format, starting with **https://** or **http://**')
+                    
+        else:
+            st.error("Please Enter URL")
+            
+    except ValueError:
+        st.warning("No Tables Detected")
+        
+                    
 
 st.markdown("------")
 st.markdown("*Made with* 🤘 *by:* [*Bhagesh_Artbeast*](https://github.com/bhagesh-codebeast)")
