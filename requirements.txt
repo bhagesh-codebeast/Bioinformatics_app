@@ -7,4 +7,5 @@ stmol==0.0.5
 streamlit==0.67.0
 pypdb==1.310.0
 urllib3==1.25.10
-html5lib==1.1  
+html5lib==1.1
+lxml==4.5.2
