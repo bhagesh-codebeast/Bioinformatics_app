@@ -1,6 +1,4 @@
-from re import search
 from typing import Counter
-from Bio.SeqIO import index
 from Bio.SeqUtils.IsoelectricPoint import IsoelectricPoint
 from altair.vegalite.v4.api import Chart
 from altair.vegalite.v4.schema.channels import Detail
@@ -15,6 +13,8 @@ from Bio.SeqUtils import MeltingTemp
 import matplotlib.pyplot as plt
 from stmol import component_3dmol
 from pypdb import *
+import requests
+import base64
 
 
 # APP TITLE
@@ -22,7 +22,7 @@ st.title('BIOINFORMATICS TOOLS')
 
 # sidebar contents = https://towardsdatascience.com/creating-streamlit-dashboard-from-scratch-59316a74fa1
 st.sidebar.subheader("PICK TOOLS")
-select = st.sidebar.selectbox("DROP-DOWN",["ABOUT","DNA FASTA Sequence","Protein FASTA Sequence","Protein Data Bank","Protein Visualisation"],key='1')
+select = st.sidebar.selectbox("DROP-DOWN",["ABOUT","DNA FASTA Sequence","Protein FASTA Sequence","Protein Data Bank","Protein Visualisation","Table Scraper"],key='1')
 
 # OPTION 1 ABOUT
 if select == "ABOUT":
@@ -226,6 +226,63 @@ elif select == "Protein Data Bank":
 elif select == "Protein Visualisation":
     component_3dmol()
 
+#Table scraper
+
+elif select == "Table Scraper":
+    st.subheader("HTML TABLE SCRAPER")
+    url = st.text_input("Enter URL Here", value='https://stackexchange.com/leagues/1/alltime/stackoverflow', max_chars=None, key=None, type='default')
+    if st.button('Submit'):
+        try:
+            if url:
+                arr = ['https://','http://']
+                if any(c in url for c in arr):
+                    header = {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                    @st.cache(persist=True, show_spinner=False)
+                    def load_data():
+                        pages = requests.get(url, headers=header)
+                        return pd.read_html(pages.text)
+                    df = load_data()
+                    length = len(df)
+                    
+                    if length == 1:
+                        st.write("Number of tables: 1" )
+                    else: st.write("Number of tables: ",str(length))
+                    if st.button("Show Tables"):
+                        st.table(df)
+                    else: st.empty()
+                    
+                    def create_list(x1,x2):
+                        return [item for item in range(x1,x2+1)]
+                    
+                    x1,x2 = 1,length
+                    
+                    Value_selected = st.selectbox("Select tables to download",create_list(x1,x2))
+                    st.write("You've selected table #",Value_selected)
+                    df1 = df[Value_selected-1]
+                    if df1.empty:
+                        st.warning("Empty DataFrame")
+                    else:
+                        df1 = df1.replace(np.nan, 'empty cell', regex=True)
+                        st.dataframe(df1)
+                        try:
+                            csv = df1.to_csv(index=False)
+                            b64 = base64.b64encode(csv.encode()).decode()
+                            text_display = f'<center>👇 Click to Download</center>'
+                            st.markdown(text_display, unsafe_allow_html=True)
+                            href = f'<center><b><a href="data:file/csv;base64,{b64}" download="filtered_table.csv">Download Table</a></b></center>'
+                            st.markdown(href, unsafe_allow_html=True)
+                        except NameError:
+                            print('WAIT')
+                else:
+                    st.error("URL needs to be in a valid format, starting with *https://* or *http://*")
+        except ValueError:
+                st.warning("No tables detected")
+
+st.markdown("------")
+st.markdown("*Made with* 🤘 *by:* [*Bhagesh_Artbeast*](https://github.com/bhagesh-codebeast)")
 #Transcribe or Translate
 #1. input 
 #2. transcribe
